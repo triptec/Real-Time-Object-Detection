@@ -29,6 +29,7 @@ class ObjectDetection:
         #self.model.classes = self.model.names
         self.classes = self.model.names
         self.out_file = out_file
+        self.found_lables = set() # set
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     def get_video_from_file(self):
@@ -45,7 +46,8 @@ class ObjectDetection:
         """
         Function loads the yolo5 model from PyTorch Hub.
         """
-        model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+        model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True)
+        #model = torch.hub.load('ultralytics/yolov3', 'yolov3', pretrained=True)
         return model
 
     def class_to_label(self, x):
@@ -76,8 +78,12 @@ class ObjectDetection:
         """
         labels, cord = results
         n = len(labels)
+        if n > 0:
+            print(f"Total Targets: {n}")
+            print(f"Labels: {set([self.class_to_label(label) for label in labels])}")
         x_shape, y_shape = frame.shape[1], frame.shape[0]
         for i in range(n):
+            self.found_lables.add(self.class_to_label(labels[i]))
             row = cord[i]
             x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape)
             bgr = (0, 0, 255)
@@ -116,6 +122,7 @@ class ObjectDetection:
                 per_com = int(tfcc / tfc * 100)
                 print(f"Frames Per Second : {fps} || Percentage Parsed : {per_com}")
             out.write(frame)
+        print(f"Found labels: {self.found_lables}")
         player.release()
 
 
